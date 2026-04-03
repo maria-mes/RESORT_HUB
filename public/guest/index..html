@@ -6,6 +6,8 @@
   <title>Guest Hub - ResortHub AI</title>
   <link rel="stylesheet" href="../css/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
 </head>
 <body>
   <!-- Guest Header -->
@@ -31,7 +33,41 @@
       </div>
     </div>
   </header>
-
+  <!-- Scan Button -->
+<div class="hunt-container">
+    <div class="hunt-header">
+      <h2>Scavenger Hunt</h2>
+      <a href="#" class="view-all">View All</a>
+    </div>
+  
+    <!-- Short description for guests -->
+    <p class="hunt-description">
+      Explore the resort and scan hidden QR codes. Each code reveals a puzzle piece. 
+      Collect all 15 pieces to unlock a surprise prize!
+    </p>
+  
+    <!-- Scan button -->
+    <button id="open-scanner" class="btn btn-accent" style="margin:1rem auto; display:block;">
+      📷 Scan QR Code
+    </button>
+  
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="modal">
+      <div class="modal-content">
+        <span id="close-scanner" class="close">&times;</span>
+        <h2>Scan QR Code</h2>
+        <p>Point your camera at a Resort QR code</p>
+        <div id="qr-reader" style="width:300px; margin:1rem auto;"></div>
+        <div id="qr-result" style="text-align:center; margin-top:1rem;"></div>
+      </div>
+    </div>
+  
+    <!-- Progress tracker -->
+    <p id="progress">No puzzle pieces available.</p>
+    <div class="pieces-grid" id="pieces-grid"></div>
+  </div>
+  
+  
   <!-- Guest Navigation -->
   <nav class="guest-nav container">
     <a href="index.html" class="guest-nav-link active">
@@ -226,5 +262,75 @@
     updateTime();
     setInterval(updateTime, 60000);
   </script>
+  <script>
+    let collectedPieces = [];
+    const totalPieces = 15;
+    let html5QrCode;
+  
+    function updateProgress() {
+      const progress = document.getElementById('progress');
+      if (collectedPieces.length === 0) {
+        progress.innerText = "No puzzle pieces available.";
+      } else {
+        progress.innerText = `Pieces collected: ${collectedPieces.length}/${totalPieces}`;
+      }
+  
+      const grid = document.getElementById('pieces-grid');
+      grid.innerHTML = "";
+      collectedPieces.forEach(p => {
+        let div = document.createElement('div');
+        div.className = "piece";
+        div.innerText = p;
+        grid.appendChild(div);
+      });
+  
+      if (collectedPieces.length === totalPieces) {
+        alert("🎉 Congratulations! You solved the puzzle and won a prize!");
+      }
+    }
+  
+    function onScanSuccess(decodedText) {
+      document.getElementById('qr-result').innerText = `Scanned: ${decodedText}`;
+      if (!collectedPieces.includes(decodedText)) {
+        collectedPieces.push(decodedText);
+      }
+      updateProgress();
+    }
+  
+    const modal = document.getElementById("scanner-modal");
+    const openBtn = document.getElementById("open-scanner");
+    const closeBtn = document.getElementById("close-scanner");
+  
+    openBtn.onclick = () => {
+      modal.style.display = "block";
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+      }
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      );
+    };
+  
+    closeBtn.onclick = () => {
+      modal.style.display = "none";
+      if (html5QrCode) {
+        html5QrCode.stop();
+      }
+    };
+  
+    window.onclick = (event) => {
+      if (event.target == modal) {
+        modal.style.display = "none";
+        if (html5QrCode) {
+          html5QrCode.stop();
+        }
+      }
+    };
+  </script>
+  
+  
+
   </body>
   </html>

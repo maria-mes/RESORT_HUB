@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Concierge - ResortHub AI</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .suggestion-chip {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .suggestion-chip:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 1rem;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body style="display: flex; flex-direction: column; height: 100vh;">
+  <!-- Guest Header -->
+  <header class="guest-header">
+    <div class="container">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem;">AI Concierge</h2>
+            <p class="text-sm" style="opacity: 0.8;">Always here to help</p>
+          </div>
+        </div>
+        <a href="index.html" class="btn btn-ghost" style="color: white;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Chat Container -->
+  <div class="chat-container" style="flex: 1; margin: 0; border-radius: 0; border: none;">
+    <div class="chat-messages" id="chat-messages">
+      <!-- AI Welcome Message -->
+      <div class="chat-message animate-fade-in">
+        <div class="chat-avatar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="chat-bubble">
+          <p>Hello Sarah! Welcome back to Paradise Resort.</p>
+          <p class="mt-1">I noticed it's a beautiful sunny day (28°C). How can I help you make the most of it?</p>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div class="flex gap-1 flex-wrap mb-4" style="margin-left: 52px;">
+        <span class="suggestion-chip" onclick="sendMessage(this.textContent)">Book spa appointment</span>
+        <span class="suggestion-chip" onclick="sendMessage(this.textContent)">Restaurant reservations</span>
+        <span class="suggestion-chip" onclick="sendMessage(this.textContent)">Room service menu</span>
+        <span class="suggestion-chip" onclick="sendMessage(this.textContent)">Local attractions</span>
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-area">
+      <input type="text" class="input chat-input" id="chat-input" placeholder="Ask me anything..." onkeypress="handleKeyPress(event)">
+      <button class="btn btn-primary" onclick="sendUserMessage()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+
+    // AI Responses based on context
+    const aiResponses = {
+      'book spa appointment': {
+        text: "I'd be happy to help you book a spa appointment! Based on your preferences from your last visit, I recommend the Deep Tissue Massage. We have availability today at 3:00 PM or 5:30 PM. Which would you prefer?",
+        suggestions: ['3:00 PM', '5:30 PM', 'Show other services']
+      },
+      'restaurant reservations': {
+        text: "For tonight, I recommend The Ocean Terrace - they have a special seafood menu and it's perfect weather for outdoor dining. Would you like a table at 7:00 PM or 8:30 PM?",
+        suggestions: ['7:00 PM', '8:30 PM', 'Other restaurants']
+      },
+      'room service menu': {
+        text: "I can help with that! Given the warm weather, our most popular items right now are the Mango Smoothie (15% off today!) and the Caesar Salad. Would you like me to place an order?",
+        suggestions: ['Order Mango Smoothie', 'See full menu', 'Order Caesar Salad']
+      },
+      'local attractions': {
+        text: "Great choice! Here are today's top recommendations:\n\n1. Sunset Cruise - Departs 5:30 PM (only 2 spots left!)\n2. Beach Volleyball Tournament - 4:00 PM\n3. Night Market - Opens 6:00 PM\n\nWould you like me to book any of these?",
+        suggestions: ['Book Sunset Cruise', 'More activities', 'Get directions']
+      },
+      'default': {
+        text: "I understand you're looking for assistance. Let me help you with that. Is there anything specific about your stay I can help with - dining, activities, room service, or spa services?",
+        suggestions: ['Dining options', 'Today\'s activities', 'Room service']
+      }
+    };
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendUserMessage();
+      }
+    }
+
+    function sendMessage(text) {
+      chatInput.value = text;
+      sendUserMessage();
+    }
+
+    function sendUserMessage() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      // Add user message
+      const userDiv = document.createElement('div');
+      userDiv.className = 'chat-message user animate-fade-in';
+      userDiv.innerHTML = `
+        <div class="chat-avatar" style="background: var(--accent);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="chat-bubble">${message}</div>
+      `;
+      chatMessages.appendChild(userDiv);
+      chatInput.value = '';
+
+      // Show typing indicator
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'chat-message animate-fade-in';
+      typingDiv.id = 'typing';
+      typingDiv.innerHTML = `
+        <div class="chat-avatar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="chat-bubble">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      chatMessages.appendChild(typingDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Get AI response
+      const lowerMessage = message.toLowerCase();
+      let response = aiResponses['default'];
+      
+      for (const key in aiResponses) {
+        if (lowerMessage.includes(key) || key.includes(lowerMessage)) {
+          response = aiResponses[key];
+          break;
+        }
+      }
+
+      // Simulate AI thinking
+      setTimeout(() => {
+        // Remove typing indicator
+        document.getElementById('typing').remove();
+
+        // Add AI response
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'chat-message animate-fade-in';
+        aiDiv.innerHTML = `
+          <div class="chat-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <div class="chat-bubble">${response.text.replace(/\n/g, '<br>')}</div>
+        `;
+        chatMessages.appendChild(aiDiv);
+
+        // Add suggestions
+        if (response.suggestions) {
+          const suggestionsDiv = document.createElement('div');
+          suggestionsDiv.className = 'flex gap-1 flex-wrap mb-4 animate-fade-in';
+          suggestionsDiv.style.marginLeft = '52px';
+          response.suggestions.forEach(s => {
+            suggestionsDiv.innerHTML += `<span class="suggestion-chip" onclick="sendMessage(this.textContent)">${s}</span>`;
+          });
+          chatMessages.appendChild(suggestionsDiv);
+        }
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 1500);
+    }
+  </script>
+  </body>
+  </html>
